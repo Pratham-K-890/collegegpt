@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CollegeGPT</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Georgia', serif;
+    background: #f7f6f2;
+    color: #1a1a1a;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 2rem 1rem;
+  }
+
+  header {
+    text-align: center;
+    margin-bottom: 2.5rem;
+  }
+
+  header h1 {
+    font-size: 2rem;
+    font-weight: normal;
+    letter-spacing: -0.5px;
+  }
+
+  header p {
+    color: #666;
+    font-size: 0.95rem;
+    margin-top: 0.4rem;
+  }
+
+  .container {
+    width: 100%;
+    max-width: 680px;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  .card {
+    background: #fff;
+    border: 1px solid #e0ddd5;
+    border-radius: 8px;
+    padding: 1.5rem;
+  }
+
+  .card h2 {
+    font-size: 0.75rem;
+    font-weight: normal;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: #999;
+    margin-bottom: 1rem;
+  }
+
+  .upload-row {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+  }
+
+  input[type="file"] {
+    flex: 1;
+    font-size: 0.9rem;
+    color: #444;
+  }
+
+  button {
+    background: #1a1a1a;
+    color: #fff;
+    border: none;
+    padding: 0.5rem 1.25rem;
+    border-radius: 5px;
+    font-size: 0.9rem;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.15s;
+  }
+
+  button:hover { background: #333; }
+  button:disabled { background: #ccc; cursor: not-allowed; }
+
+  #upload-status {
+    margin-top: 0.75rem;
+    font-size: 0.85rem;
+    color: #666;
+    min-height: 1.2em;
+  }
+
+  #doc-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  #doc-list li {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.6rem 0.75rem;
+    background: #f7f6f2;
+    border-radius: 5px;
+    font-size: 0.9rem;
+  }
+
+  #doc-list li span {
+    color: #444;
+  }
+
+  .delete-btn {
+    background: none;
+    color: #c0392b;
+    border: 1px solid #e0a09a;
+    padding: 0.25rem 0.75rem;
+    font-size: 0.8rem;
+    border-radius: 4px;
+  }
+
+  .delete-btn:hover { background: #fdf0ef; }
+
+  #no-docs {
+    font-size: 0.9rem;
+    color: #aaa;
+  }
+
+  .chat-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  select {
+    width: 100%;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid #e0ddd5;
+    border-radius: 5px;
+    font-size: 0.9rem;
+    background: #fff;
+    color: #444;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23999' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.75rem center;
+  }
+
+  .question-row {
+    display: flex;
+    gap: 0.75rem;
+  }
+
+  #question-input {
+    flex: 1;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid #e0ddd5;
+    border-radius: 5px;
+    font-size: 0.9rem;
+    font-family: inherit;
+    outline: none;
+    transition: border 0.15s;
+  }
+
+  #question-input:focus { border-color: #aaa; }
+
+  #answer-box {
+    display: none;
+    margin-top: 1.25rem;
+    border-top: 1px solid #e0ddd5;
+    padding-top: 1.25rem;
+  }
+
+  #answer-text {
+    font-size: 0.95rem;
+    line-height: 1.7;
+    color: #1a1a1a;
+    margin-bottom: 1rem;
+  }
+
+  .sources-label {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #999;
+    margin-bottom: 0.5rem;
+  }
+
+  #sources-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+
+  .source-item {
+    font-size: 0.82rem;
+    color: #666;
+    background: #f7f6f2;
+    padding: 0.5rem 0.75rem;
+    border-radius: 4px;
+    border-left: 2px solid #ccc;
+    line-height: 1.5;
+  }
+
+  #loading {
+    display: none;
+    font-size: 0.85rem;
+    color: #999;
+    margin-top: 0.75rem;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>CollegeGPT</h1>
+  <p>Ask questions from your own documents</p>
+</header>
+
+<div class="container">
+
+  <!-- Upload -->
+  <div class="card">
+    <h2>Upload Document</h2>
+    <div class="upload-row">
+      <input type="file" id="file-input" accept=".txt">
+      <button onclick="uploadFile()">Upload</button>
+    </div>
+    <div id="upload-status"></div>
+  </div>
+
+  <!-- Documents -->
+  <div class="card">
+    <h2>Your Documents</h2>
+    <p id="no-docs" style="display:none">No documents uploaded yet.</p>
+    <ul id="doc-list"></ul>
+  </div>
+
+  <!-- Chat -->
+  <div class="card">
+    <h2>Chat</h2>
+    <div class="chat-controls">
+      <select id="source-filter">
+        <option value="">Search all documents</option>
+      </select>
+      <div class="question-row">
+        <input type="text" id="question-input" placeholder="Ask a question..." onkeydown="if(event.key==='Enter') sendChat()">
+        <button onclick="sendChat()">Ask</button>
+      </div>
+    </div>
+    <div id="loading">Thinking...</div>
+    <div id="answer-box">
+      <div id="answer-text"></div>
+      <div class="sources-label">Sources</div>
+      <div id="sources-list"></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const API = "http://localhost:8000";
+
+async function loadDocuments() {
+  const res = await fetch(`${API}/documents`);
+  const data = await res.json();
+  const list = document.getElementById("doc-list");
+  const none = document.getElementById("no-docs");
+  const filter = document.getElementById("source-filter");
+
+  list.innerHTML = "";
+  filter.innerHTML = '<option value="">Search all documents</option>';
+
+  if (data.documents.length === 0) {
+    none.style.display = "block";
+    return;
+  }
+
+  none.style.display = "none";
+  data.documents.forEach(doc => {
+    const li = document.createElement("li");
+    li.innerHTML = `<span>${doc}</span><button class="delete-btn" onclick="deleteDoc('${doc}')">Delete</button>`;
+    list.appendChild(li);
+
+    const opt = document.createElement("option");
+    opt.value = doc;
+    opt.textContent = doc;
+    filter.appendChild(opt);
+  });
+}
+
+async function uploadFile() {
+  const input = document.getElementById("file-input");
+  const status = document.getElementById("upload-status");
+
+  if (!input.files[0]) {
+    status.textContent = "Please select a file first.";
+    return;
+  }
+
+  const formData = new FormData();
+  formData.append("file", input.files[0]);
+
+  status.textContent = "Uploading...";
+  const res = await fetch(`${API}/upload`, { method: "POST", body: formData });
+  const data = await res.json();
+
+  status.textContent = data.message || "Uploaded.";
+  input.value = "";
+  loadDocuments();
+}
+
+async function deleteDoc(filename) {
+  await fetch(`${API}/documents/${encodeURIComponent(filename)}`, { method: "DELETE" });
+  loadDocuments();
+}
+
+async function sendChat() {
+  const question = document.getElementById("question-input").value.trim();
+  const source = document.getElementById("source-filter").value;
+  const loading = document.getElementById("loading");
+  const answerBox = document.getElementById("answer-box");
+  const answerText = document.getElementById("answer-text");
+  const sourcesList = document.getElementById("sources-list");
+
+  if (!question) return;
+
+  loading.style.display = "block";
+  answerBox.style.display = "none";
+
+  const url = source ? `${API}/chat?source=${encodeURIComponent(source)}` : `${API}/chat`;
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ question })
+  });
+
+  const data = await res.json();
+  loading.style.display = "none";
+  answerBox.style.display = "block";
+  answerText.textContent = data.answer;
+
+  sourcesList.innerHTML = "";
+  data.sources.forEach(s => {
+    const div = document.createElement("div");
+    div.className = "source-item";
+    div.textContent = s;
+    sourcesList.appendChild(div);
+  });
+}
+
+loadDocuments();
+</script>
+</body>
+</html>
